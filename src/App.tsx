@@ -1,39 +1,40 @@
-import { useEffect, useState } from "react";
-import type { Schema } from "../amplify/data/resource";
+import {
+  Authenticator,
+  ThemeProvider,
+  Theme,
+  View} from '@aws-amplify/ui-react';
 import { generateClient } from "aws-amplify/data";
 
-const client = generateClient<Schema>();
+import type { Schema } from "../amplify/data/resource";
+import Dashboard from "./Dashboard";
+import { formFields } from './components/authenticator/FormFields';
+import { AuthComponents } from './components/authenticator/Comps';
 
 function App() {
-  const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
+  const theme = {
+    name: 'my-theme',
+  };
 
-  useEffect(() => {
-    client.models.Todo.observeQuery().subscribe({
-      next: (data) => setTodos([...data.items]),
-    });
-  }, []);
-
-  function createTodo() {
-    client.models.Todo.create({ content: window.prompt("Todo content") });
-  }
+  const authTheme: Theme = theme;
 
   return (
-    <main>
-      <h1>My todos</h1>
-      <button onClick={createTodo}>+ new</button>
-      <ul>
-        {todos.map((todo) => (
-          <li key={todo.id}>{todo.content}</li>
-        ))}
-      </ul>
-      <div>
-        🥳 App successfully hosted. Try creating a new todo.
-        <br />
-        <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
-          Review next step of this tutorial.
-        </a>
-      </div>
-    </main>
+    <ThemeProvider theme={authTheme}>
+      <View padding="xxs">
+        <Authenticator
+            formFields={formFields}
+            components={AuthComponents}
+            >
+            {
+              ({ signOut, user }) => {
+                const client = generateClient<Schema>();
+                return (
+                  <Dashboard client={client} authUser={user!} signOut={(): void => signOut!()} />
+                );
+              }
+            }
+          </Authenticator>
+        </View>
+    </ThemeProvider>
   );
 }
 
